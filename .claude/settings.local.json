@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd \"C:/Users/jvini/bot_feedback_sujestoes\" && npm install discord.js dotenv)"
+    ]
+  }
+}
