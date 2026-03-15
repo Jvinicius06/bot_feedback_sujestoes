@@ -83,7 +83,7 @@ client.on("interactionCreate", async (interaction) => {
       .setTitle("Central de Feedback")
       .setDescription(
         "Clique em um dos botoes abaixo para enviar seu **feedback**, **sugestao** ou **denuncia**.\n\n" +
-        "Voce pode escolher se deseja ser **anonimo** ou **identificado** dentro do formulario."
+        "Apos clicar, voce podera escolher se deseja ser **anonimo** ou **identificado**."
       )
       .setColor(0x2b2d31)
       .setFooter({ text: "Suas mensagens sao enviadas para a equipe administrativa." });
@@ -117,14 +117,43 @@ client.on("interactionCreate", async (interaction) => {
     return;
   }
 
-  // ── Botao → Abrir modal ──
+  // ── Botao do tipo → Escolher anonimo/identificado ──
   if (interaction.isButton() && interaction.customId.startsWith("open_modal_")) {
     const type = interaction.customId.replace("open_modal_", "");
     const cfg = TYPES[type];
     if (!cfg) return;
 
+    const row = new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`anonimo_sim_${type}`)
+        .setLabel("Anonimo")
+        .setEmoji("🕶️")
+        .setStyle(ButtonStyle.Secondary),
+      new ButtonBuilder()
+        .setCustomId(`anonimo_nao_${type}`)
+        .setLabel("Identificado")
+        .setEmoji("👤")
+        .setStyle(ButtonStyle.Secondary)
+    );
+
+    await interaction.reply({
+      content: `${cfg.emoji} **${cfg.label}** — Deseja enviar como **anonimo** ou **identificado**?`,
+      components: [row],
+      flags: MessageFlags.Ephemeral,
+    });
+    return;
+  }
+
+  // ── Botao anonimo/identificado → Abrir modal ──
+  if (interaction.isButton() && interaction.customId.startsWith("anonimo_")) {
+    const parts = interaction.customId.split("_"); // anonimo_sim_feedback / anonimo_nao_feedback
+    const isAnonimo = parts[1] === "sim";
+    const type = parts.slice(2).join("_");
+    const cfg = TYPES[type];
+    if (!cfg) return;
+
     const modal = new ModalBuilder()
-      .setCustomId(`submit_${type}`)
+      .setCustomId(`submit_${isAnonimo ? "anon" : "ident"}_${type}`)
       .setTitle(`${cfg.emoji} ${cfg.label}`);
 
     const tituloInput = new TextInputBuilder()
@@ -143,19 +172,9 @@ client.on("interactionCreate", async (interaction) => {
       .setMaxLength(2000)
       .setRequired(true);
 
-    const anonimoInput = new TextInputBuilder()
-      .setCustomId("anonimo")
-      .setLabel("Deseja ser anonimo? (sim / nao)")
-      .setPlaceholder("sim")
-      .setValue("sim")
-      .setStyle(TextInputStyle.Short)
-      .setMaxLength(3)
-      .setRequired(true);
-
     modal.addComponents(
       new ActionRowBuilder().addComponents(tituloInput),
-      new ActionRowBuilder().addComponents(descricaoInput),
-      new ActionRowBuilder().addComponents(anonimoInput)
+      new ActionRowBuilder().addComponents(descricaoInput)
     );
 
     await interaction.showModal(modal);
@@ -164,14 +183,15 @@ client.on("interactionCreate", async (interaction) => {
 
   // ── Modal enviado ──
   if (interaction.isModalSubmit() && interaction.customId.startsWith("submit_")) {
-    const type = interaction.customId.replace("submit_", "");
+    // customId: submit_anon_feedback ou submit_ident_feedback
+    const parts = interaction.customId.split("_"); // submit, anon/ident, type...
+    const isAnonimo = parts[1] === "anon";
+    const type = parts.slice(2).join("_");
     const cfg = TYPES[type];
     if (!cfg) return;
 
     const titulo = interaction.fields.getTextInputValue("titulo");
     const descricao = interaction.fields.getTextInputValue("descricao");
-    const anonimoRaw = interaction.fields.getTextInputValue("anonimo").toLowerCase().trim();
-    const isAnonimo = anonimoRaw === "sim" || anonimoRaw === "s";
 
     // Embed para o canal de admin
     const embed = new EmbedBuilder()
