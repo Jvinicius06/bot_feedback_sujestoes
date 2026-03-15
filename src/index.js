@@ -195,7 +195,7 @@ client.on("interactionCreate", async (interaction) => {
     if (!isAnonimo) {
       embed.addFields({
         name: "Autor",
-        value: `${interaction.user.tag} (${interaction.user.id})`,
+        value: `${interaction.member?.displayName ?? interaction.user.displayName} (${interaction.user.id})`,
         inline: true,
       });
       embed.setThumbnail(interaction.user.displayAvatarURL({ size: 64 }));
@@ -223,7 +223,7 @@ client.on("interactionCreate", async (interaction) => {
 
         const logEmbed = new EmbedBuilder()
           .setAuthor({
-            name: `${interaction.user.tag}`,
+            name: `${interaction.member?.displayName ?? interaction.user.displayName}`,
             iconURL: interaction.user.displayAvatarURL({ size: 128 }),
           })
           .setTitle(`${cfg.emoji}  ${cfg.label.toUpperCase()}${anonTag}`)
@@ -237,7 +237,7 @@ client.on("interactionCreate", async (interaction) => {
             {
               name: "👤  Usuario",
               value:
-                `> **Tag:** ${interaction.user.tag}\n` +
+                `> **Nick:** ${interaction.member?.displayName ?? interaction.user.displayName}\n` +
                 `> **ID:** \`${interaction.user.id}\`\n` +
                 `> **Mencao:** <@${interaction.user.id}>`,
               inline: false,
